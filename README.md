@@ -40,4 +40,6 @@ If applicaiton running successfully we shall get:
 5. Student Service: http://localhost:8081
 6. Book Service: http://localhost:8082
 
+For swagger-ui on each service should be on "/swagger-ui/index.html"
+
 PS: For some dummy data we can execute "student-migration.sql" and "v2-book-migration.sql" from PGAdmin dashboard.
