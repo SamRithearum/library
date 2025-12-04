@@ -1,0 +1,480 @@
+Step1:
+companies
+
+Step 2:
+custom_fields > assign company
+
+Step 3:
+users > assign company > assign custom field arry _id
+
+Step 4:
+clients > assign company > assign custom field arry _id [{ …obj, customField: “”}]
+
+Step 5:
+agents > assign company > assign custom field arry [{ …obj, customField: “”}]
+
+Step 6:
+product_categories > assign company
+
+Step 7:
+product_types > assign company
+
+Step 8:
+product_options > assign company
+
+Step 9:
+product_option_groups > assign company > options _id[]
+
+Step 10:
+products > assign company > companyIdToCompanyIssuedId = ‘_id:str’  assign category > assign type > option_group_id[] >options _id[]
+
+
+
+
+
+
+
+
+
+
+
+
+// Welcome to the TypeScript Playground, this is a website
+// which gives you a chance to write, share and learn TypeScript.
+import mongoose from "mongoose";
+import fs from "fs";
+
+// You could think of it in three ways:
+//
+//  - A location to learn TypeScript where nothing can break
+//  - A place to experiment with TypeScript syntax, and share the URLs with others
+//  - A sandbox to experiment with different compiler features of TypeScript
+import companies from "./companies.json";
+import customFields from "./custom_fields.json";
+import users from "./users.json";
+import agents from "./agents.json";
+import clients from "./clients.json";
+import productCategories from "./product_categories.json";
+import productTypes from "./product_types.json";
+import productOptions from "./product_options.json";
+import productOptionGroups from "./product_option_groups.json";
+import products from "./products.json";
+// To learn more about the language, click above in "Examples" or "What's New".
+// Otherwise, get started by removing these comments and the world is your playground.
+interface Oid {
+  $oid: string;
+}
+
+interface Mod {
+  oldId: Oid;
+  newId: Oid;
+}
+
+const getCompanies = () => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const company of companies) {
+    const oldId = company._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({ ...company, _id: newId, name: company.name + " 2" });
+  }
+  return { mod, data };
+};
+
+const getCustomFields = (companiesMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const customField of customFields) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === customField.company.$oid
+    );
+    const oldId = customField._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({ ...customField, _id: newId, company: companyMod.newId });
+  }
+  return { mod, data };
+};
+
+const getUsers = (companiesMod: Mod[], customFieldsMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const user of users) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === user.company.$oid
+    );
+    const oldId = user._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({
+      ...user,
+      _id: newId,
+      company: companyMod.newId,
+      customFields: user.customFields.map((cus) => {
+        const cusMod = customFieldsMod.find(
+          (c) => c.oldId.$oid === cus.customField.$oid
+        );
+        return { ...cus, customField: cusMod.newId };
+      }),
+    });
+  }
+  return { mod, data };
+};
+
+const getAgents = (companiesMod: Mod[], customFieldsMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const agent of agents) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === agent.company.$oid
+    );
+    const oldId = agent._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({
+      ...agent,
+      _id: newId,
+      company: companyMod.newId,
+      addresses: agent.addresses.map((address) => ({
+        ...address,
+        customFields: address.customFields.map((cus) => {
+          const cusMod = customFieldsMod.find(
+            (c) => c.oldId.$oid === cus.customField.$oid
+          );
+          return { ...cus, customField: cusMod.newId };
+        }),
+      })),
+      contacts: agent.contacts.map((contact) => ({
+        ...contact,
+        customFields: contact.customFields.map((cus) => {
+          const cusMod = customFieldsMod.find(
+            (c) => c.oldId.$oid === cus.customField.$oid
+          );
+          return { ...cus, customField: cusMod.newId };
+        }),
+      })),
+    });
+  }
+  return { mod, data };
+};
+
+const getClients = (companiesMod: Mod[], customFieldsMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const client of clients) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === client.company.$oid
+    );
+    const oldId = client._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({
+      ...client,
+      _id: newId,
+      company: companyMod.newId,
+      addresses: client.addresses.map((address) => ({
+        ...address,
+        customFields: address.customFields.map((cus) => {
+          const cusMod = customFieldsMod.find(
+            (c) => c.oldId.$oid === cus.customField.$oid
+          );
+          return { ...cus, customField: cusMod.newId };
+        }),
+      })),
+      contacts: client.contacts.map((contact) => ({
+        ...contact,
+        customFields: contact.customFields.map((cus) => {
+          const cusMod = customFieldsMod.find(
+            (c) => c.oldId.$oid === cus.customField.$oid
+          );
+          return { ...cus, customField: cusMod.newId };
+        }),
+      })),
+    });
+  }
+  return { mod, data };
+};
+
+const getProductCategories = (companiesMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const productCategory of productCategories) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === productCategory.company.$oid
+    );
+    const oldId = productCategory._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({ ...productCategory, _id: newId, company: companyMod.newId });
+  }
+  return { mod, data };
+};
+
+const getProductTypes = (companiesMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const productType of productTypes) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === productType.company.$oid
+    );
+    const oldId = productType._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({ ...productType, _id: newId, company: companyMod.newId });
+  }
+  return { mod, data };
+};
+
+const getProductOptions = (companiesMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const productOption of productOptions) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === productOption.company.$oid
+    );
+    const oldId = productOption._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({ ...productOption, _id: newId, company: companyMod.newId });
+  }
+  return { mod, data };
+};
+
+const getProductOptionGroups = (companiesMod: Mod[], optionsMod: Mod[]) => {
+  const mod: Mod[] = [];
+  const data = [];
+  for (const productOptionGroup of productOptionGroups) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === productOptionGroup.company.$oid
+    );
+    const oldId = productOptionGroup._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({
+      ...productOptionGroup,
+      _id: newId,
+      company: companyMod.newId,
+      options: productOptionGroup.options.map((o) => {
+        const optionMod = optionsMod.find((c) => c.oldId.$oid === o.$oid);
+        return optionMod.newId;
+      }),
+    });
+  }
+  return { mod, data };
+};
+
+const getProducts = (
+  companiesMod: Mod[],
+  categoriesMod: Mod[],
+  typesMod: Mod[],
+  optGroupsMod: Mod[],
+  optsMod: Mod[]
+) => {
+  const mod: Mod[] = [];
+  const data = [];
+  console.log({ categoriesMod, typesMod });
+
+  for (const product of products) {
+    const companyMod = companiesMod.find(
+      (c) => c.oldId.$oid === product.company.$oid
+    );
+    const categoryMod = categoriesMod.find(
+      (c) => c.oldId.$oid === product.category.$oid
+    );
+    const typeMod = typesMod.find((t) => t.oldId.$oid === product.type.$oid);
+
+    const oldId = product._id;
+    const newId = { $oid: new mongoose.Types.ObjectId().toString() };
+    mod.push({ oldId, newId });
+    data.push({
+      ...product,
+      _id: newId,
+      company: companyMod.newId,
+      category: categoryMod.newId,
+      type: typeMod.newId,
+      companyIdToCompanyIssuedId:
+        companyMod.newId.$oid + ":" + product.companyIssuedId,
+      options: product.options.map((o) => {
+        const optMod = optsMod.find((c) => c.oldId.$oid === o.$oid);
+        return optMod.newId;
+      }),
+      configuredOptionGroups: product.configuredOptionGroups.map((og) => {
+        const optGroupMod = optGroupsMod.find((c) => c.oldId.$oid === o.$oid);
+        return optGroupMod.newId;
+      }),
+    });
+  }
+  return { mod, data };
+};
+
+const companyDict = getCompanies();
+const customFieldDict = getCustomFields(companyDict.mod);
+const userDict = getUsers(companyDict.mod, customFieldDict.mod);
+const agentDict = getAgents(companyDict.mod, customFieldDict.mod);
+const clientDict = getClients(companyDict.mod, customFieldDict.mod);
+const prodCateDict = getProductCategories(companyDict.mod);
+const prodTypeDict = getProductTypes(companyDict.mod);
+const prodOptDict = getProductOptions(companyDict.mod);
+const prodOptGrpDict = getProductOptionGroups(companyDict.mod, prodOptDict.mod);
+const productDict = getProducts(
+  companyDict.mod,
+  prodCateDict.mod,
+  prodTypeDict.mod,
+  prodOptGrpDict.mod,
+  prodOptDict.mod
+);
+
+console.log(
+  "[company: ",
+  companies.length,
+  " items]",
+  "[company clone: ",
+  companyDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[custom_fields: ",
+  customFields.length,
+  " items]",
+  "[custom_fields clone: ",
+  customFieldDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[users: ",
+  users.length,
+  " items]",
+  "[users clone: ",
+  userDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[agent: ",
+  agents.length,
+  " items]",
+  "[agent clone: ",
+  agentDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[client: ",
+  clients.length,
+  " items]",
+  "[client clone: ",
+  clientDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[product_categories: ",
+  productCategories.length,
+  " items]",
+  "[product_categories clone: ",
+  prodCateDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[product_types: ",
+  productTypes.length,
+  " items]",
+  "[product_types clone: ",
+  prodTypeDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[product_options: ",
+  productOptions.length,
+  " items]",
+  "[product_options clone: ",
+  prodOptDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[product_option_groups: ",
+  productOptionGroups.length,
+  " items]",
+  "[product_option_groups clone: ",
+  prodOptGrpDict.data.length,
+  " items]"
+);
+
+console.log(
+  "[products: ",
+  products.length,
+  " items]",
+  "[products clone: ",
+  productDict.data.length,
+  " items]"
+);
+
+const companiesClone = JSON.stringify(companyDict.data, null, 2);
+const customFieldsClone = JSON.stringify(customFieldDict.data, null, 2);
+const usersClone = JSON.stringify(userDict.data, null, 2);
+const agentsClone = JSON.stringify(agentDict.data, null, 2);
+const clientsClone = JSON.stringify(clientDict.data, null, 2);
+const productCategoriesClone = JSON.stringify(prodCateDict.data, null, 2);
+const productTypesClone = JSON.stringify(prodTypeDict.data, null, 2);
+const productOptionsClone = JSON.stringify(prodOptDict.data, null, 2);
+const productOptionGroupsClone = JSON.stringify(prodOptGrpDict.data, null, 2);
+const productsClone = JSON.stringify(productDict.data, null, 2);
+
+fs.writeFile("clone/companies_clone.json", companiesClone, "utf8");
+fs.writeFile("clone/custom_fields_clone.json", customFieldsClone, "utf8");
+fs.writeFile("clone/users_clone.json", usersClone, "utf8");
+fs.writeFile("clone/agents_clone.json", agentsClone, "utf8");
+fs.writeFile("clone/clients_clone.json", clientsClone, "utf8");
+fs.writeFile(
+  "clone/product_categories_clone.json",
+  productCategoriesClone,
+  "utf8"
+);
+fs.writeFile("clone/product_types_clone.json", productTypesClone, "utf8");
+fs.writeFile("clone/product_options_clone.json", productOptionsClone, "utf8");
+fs.writeFile(
+  "clone/product_option_groups_clone.json",
+  productOptionGroupsClone,
+  "utf8"
+);
+fs.writeFile("clone/products_clone.json", productsClone, "utf8");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
