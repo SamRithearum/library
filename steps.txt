@@ -448,7 +448,28 @@ fs.writeFile("clone/products_clone.json", productsClone, "utf8");
 
 
 
+As per the request from Bancassurance and Underwriting teams, we need to temporarily enable the AWS system to allow proposals with a maximum Face Amount of $500,000 for Savings products.
+Currently, the system restricts FA for certain policy terms (e.g., 15-year term). This change is required to accommodate two VIP client cases already approved by Tracy Leung and Orn San.
 
+Scope:
+
+Update validation rules in AWS to allow FA up to $500,000 for Savings proposals.
+
+Applicable for both 10-year and 15-year terms.
+
+Ensure underwriting review remains mandatory before final acceptance.
+
+Start Date: December 23, 2025
+End Date: December 25, 2025
+
+
+Acceptance Criteria:
+
+Agents can successfully submit proposals with FA $500,000 for Savings products during the specified period.
+
+No impact on other product validations.
+
+Change automatically reverts after Dec 25, 2025.
 
 
 
