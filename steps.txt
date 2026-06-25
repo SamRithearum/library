@@ -475,7 +475,72 @@ Change automatically reverts after Dec 25, 2025.
 
 
 
+// Welcome to the TypeScript Playground, this is a website
+// which gives you a chance to write, share and learn TypeScript.
 
+// You could think of it in three ways:
+//
+//  - A location to learn TypeScript where nothing can break
+//  - A place to experiment with TypeScript syntax, and share the URLs with others
+//  - A sandbox to experiment with different compiler features of TypeScript
+import { AnyBulkWriteOperation } from "mongodb";
+const BATCH_SIZE = 500;
+
+export const up = async function () {
+	await withDb(async ({ db }) => {
+		await db.DisplayPreference.deleteMany({
+			type: "ACCOUNT_TRANSACTION",
+		});
+		const companyDocs = await db.Company.collection.find({}).toArray();
+		for (const company of companyDocs) {
+            const multiCurrencyConfigs = company.currencyConfigs;
+            if (!multiCurrencyConfigs) continue;
+            await handleProductBackfill(db, company._id, multiCurrencyConfigs);
+		}
+	});
+};
+
+const handleProductBackfill = async (db: any, companyId: string, multiCurrencyConfigs: any) => {
+    const productCount = await db.Product.collection.countDocuments({ company: companyId });
+    const productBatches = Math.ceil(productCount / BATCH_SIZE);
+
+    for (let i = 0; i < productBatches; i++) {
+        const records = await db.Product.collection
+            .find({ company: companyId })
+            .limit(BATCH_SIZE)
+            .toArray();
+
+        const ops: AnyBulkWriteOperation[] = [];
+        for (const r of records) {
+            const updateOps = {
+                updateOne: {
+                    filter: { _id: r._id },
+                    update: {
+                        $set: {
+                            productId: r.companyIssuedId,
+                            companyIdToProductId: `${r.company.toString()}:${r.companyIssuedId}`,
+                        },
+                    },
+                },
+            } as AnyBulkWriteOperation;
+
+            ops.push(updateOps);
+        }
+
+        await db.Product.collection.bulkWrite(ops);
+    }
+}
+
+const generatePriceConfigs = (listedPrice: number, multiCurrencyConfigs: any) => {
+    return multiCurrencyConfigs.map((c) => ({
+        ...c,
+        price: bigMath.mul(listedPrice, c.rate),
+    }));
+}
+
+// To learn more about the language, click above in "Examples" or "What's New".
+// Otherwise, get started by removing these comments and the world is your playground.
+  
 
 
 
